@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planet Orbit Simulator</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      background-color: #000;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #fff;
+      border-radius: 10px;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:active {
+      background-color: #004080;
+    }
+    
+  </style>
+</head>
+<body>
+  
+  <h1>Planet Orbit Simulator</h1>
+  
+  <canvas id="orbitCanvas" width="600" height="600"></canvas>
+  
+  <div class="controls">
+    <button id="semiMajorAxis" onclick="AU()">반장축 입력</button>
+    <button id="eccentricity" onclick="ecc()">이심률 입력</button>
+    <button id="period" onclick="jugi()">공전 주기 입력</button>
+  </div>
+
+  <script>
+    // 캔버스 및 컨텍스트 설정
+    const canvas = document.getElementById('orbitCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // planet 객체를 미리 정의합니다.
+    const planet = {
+      semiMajorAxis: 150,
+      eccentricity: 0.0167,
+      period: 365.25,
+      theta: 0,
+      angularVelocity: 0 // 각속도를 추적
+    };
+  
+    function AU() {
+      // 반장축을 입력받아 planet 객체에 할당
+      planet.semiMajorAxis = Number(prompt("행성의 반장축을 입력해 주세요. (지구의 평균 태양 거리는 150입니다.)"));
+    }
+  
+    function ecc() {
+      // 이심률을 입력받아 planet 객체에 할당
+      planet.eccentricity = Number(prompt("행성의 이심률을 입력해 주세요. (0~1 까지의 값을 입력하세요. 지구의 이심률은 0.0167입니다.)"));
+    }
+  
+    function jugi() {
+      // 공전주기를 입력받아 planet 객체에 할당
+      planet.period = Number(prompt("행성의 공전주기를 입력해 주세요. (지구의 공전주기는 365.25입니다.)"));
+    }
+    
+    // 태양 중심 좌표
+    const sun = {
+      x: canvas.width / 2,
+      y: canvas.height / 2
+    };
+
+    // 궤도 그리기 함수
+    function drawOrbit() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 태양 그리기
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+      
+      // 타원의 초점 계산
+      const focusDistance = planet.semiMajorAxis * planet.eccentricity;
+      const centerX = sun.x - focusDistance;  // 타원의 중심을 계산
+
+      // 행성 궤도 그리기 (타원)
+      ctx.beginPath();
+      ctx.ellipse(centerX, sun.y, planet.semiMajorAxis, planet.semiMajorAxis * Math.sqrt(1 - Math.pow(planet.eccentricity, 2)), 0, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'white';
+      ctx.stroke();
+      
+      // 행성 위치 계산 (타원의 매개변수 방정식 사용)
+      const r = planet.semiMajorAxis * (1 - Math.pow(planet.eccentricity, 2)) / (1 + planet.eccentricity * Math.cos(planet.theta));
+      const x = sun.x + r * Math.cos(planet.theta);
+      const y = sun.y + r * Math.sin(planet.theta);
+      
+      // 행성 그리기
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = 'blue';
+      ctx.fill();
+    }
+    
+    // 애니메이션 업데이트
+    function update() {
+      // 현재 반지름 r 계산
+      const r = planet.semiMajorAxis * (1 - Math.pow(planet.eccentricity, 2)) / (1 + planet.eccentricity * Math.cos(planet.theta));
+      
+      // 케플러 제2법칙에 따라 각속도 업데이트 (r에 반비례)
+      planet.angularVelocity = 2 * Math.PI / planet.period * (planet.semiMajorAxis * planet.semiMajorAxis) / (r * r);
+      
+      // 행성의 각도 업데이트
+      planet.theta -= planet.angularVelocity;
+      
+      // 궤도 및 행성 위치 다시 그리기
+      drawOrbit();
+      
+      // 60FPS로 애니메이션 실행
+      requestAnimationFrame(update);
+    }
+    
+    // 애니메이션 시작
+    update();
+
+  </script>
+  
+</body>
+</html>
